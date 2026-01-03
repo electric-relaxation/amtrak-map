@@ -1,31 +1,69 @@
-import { MapContainer, GeoJSON } from 'react-leaflet';
-import { LatLngBoundsExpression } from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import { ReactNode, useMemo } from 'react';
+import Map, { Source, Layer } from 'react-map-gl/maplibre';
+import type { StyleSpecification, FillLayerSpecification, LineLayerSpecification } from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
 import './USMap.css';
 import { useUSStates } from '../hooks/useUSStates';
 import { useDarkMode } from '../hooks/useDarkMode';
 
-const USMap = () => {
+interface USMapProps {
+  children?: ReactNode;
+}
+
+const USMap = ({ children }: USMapProps) => {
   const { statesData, loading, error } = useUSStates();
   const isDark = useDarkMode();
 
-  // Geographic center of continental US
-  const center: [number, number] = [39.8, -98.5];
-  const zoom = 4.6;
+  // Initial view state centered on continental US
+  const initialViewState = {
+    longitude: -96,
+    latitude: 38.5,
+    zoom: 3.8,
+  };
 
-  // Bounds for continental US only
-  const bounds: LatLngBoundsExpression = [
-    [28.0, -124.0], // Southwest
-    [49.0, -68.0],  // Northeast
+  // Bounds for continental US
+  const maxBounds: [[number, number], [number, number]] = [
+    [-130.0, 22.0], // Southwest [lng, lat]
+    [-60.0, 52.0],  // Northeast [lng, lat]
   ];
 
-  // Style for state borders - responsive to dark mode
-  const stateStyle = {
-    fillColor: isDark ? '#202020' : '#e6e6e6',
-    fillOpacity: 1,
-    color: isDark ? '#505050' : '#a0a0a0',
-    weight: 0.7,
-  };
+  // Create a minimal map style with just a background color
+  const mapStyle: StyleSpecification = useMemo(() => ({
+    version: 8,
+    name: 'US Map',
+    sources: {},
+    layers: [
+      {
+        id: 'background',
+        type: 'background',
+        paint: {
+          'background-color': isDark ? '#1b1b1b' : '#e0e0e0',
+        },
+      },
+    ],
+  }), [isDark]);
+
+  // Layer style for state fills
+  const stateFillLayer: FillLayerSpecification = useMemo(() => ({
+    id: 'state-fill',
+    type: 'fill',
+    source: 'states',
+    paint: {
+      'fill-color': isDark ? '#202020' : '#e6e6e6',
+      'fill-opacity': 1,
+    },
+  }), [isDark]);
+
+  // Layer style for state borders
+  const stateBorderLayer: LineLayerSpecification = useMemo(() => ({
+    id: 'state-borders',
+    type: 'line',
+    source: 'states',
+    paint: {
+      'line-color': isDark ? '#505050' : '#a0a0a0',
+      'line-width': 0.7,
+    },
+  }), [isDark]);
 
   if (loading) {
     return (
@@ -44,29 +82,31 @@ const USMap = () => {
   }
 
   return (
-    <div className="w-full h-screen bg-white dark:bg-gray-900">
-      <MapContainer
-        center={center}
-        zoom={zoom}
-        zoomSnap={0.1}
-        scrollWheelZoom={false}
-        maxBounds={bounds}
-        maxBoundsViscosity={1.0}
-        className="w-full h-full us-map"
-        dragging={false}
+    <div className="w-full h-screen">
+      <Map
+        initialViewState={initialViewState}
+        style={{ width: '100%', height: '100%' }}
+        mapStyle={mapStyle}
+        maxBounds={maxBounds}
+        scrollZoom={false}
+        dragPan={false}
+        dragRotate={false}
         doubleClickZoom={false}
-        boxZoom={false}
-        zoomControl={false}
+        touchZoomRotate={false}
+        keyboard={false}
+        attributionControl={false}
       >
-        {/* Render only contiguous US states - no tiles, no water, no other countries */}
+        {/* Render US states as GeoJSON */}
         {statesData && (
-          <GeoJSON
-            data={statesData}
-            style={stateStyle}
-            key={isDark ? 'dark' : 'light'} // Force re-render on theme change
-          />
+          <Source id="states" type="geojson" data={statesData}>
+            <Layer {...stateFillLayer} />
+            <Layer {...stateBorderLayer} />
+          </Source>
         )}
-      </MapContainer>
+
+        {/* Render additional map layers (routes, markers, etc.) */}
+        {children}
+      </Map>
     </div>
   );
 };
