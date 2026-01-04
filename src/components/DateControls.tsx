@@ -117,20 +117,63 @@ export default function DateControls({ selectedDate, onDateChange, isDark = true
     onDateChange(date);
   }, [onDateChange]);
 
-  // Adjust date by days, clamped to current year
-  const adjustDate = useCallback((days: number) => {
+  // Adjust date by days, wrapping within the year
+  const adjustDateDaily = useCallback((days: number) => {
     const newDate = new Date(selectedDate);
     newDate.setDate(newDate.getDate() + days);
 
-    // Clamp to current year
+    // Wrap around within the same year
     if (newDate < startOfYear) {
-      onDateChange(startOfYear);
+      // Went before Jan 1, wrap to end of year
+      const daysBeforeStart = Math.ceil((startOfYear.getTime() - newDate.getTime()) / (1000 * 60 * 60 * 24));
+      const wrappedDate = new Date(year, 11, 31);
+      wrappedDate.setDate(wrappedDate.getDate() - daysBeforeStart + 1);
+      onDateChange(wrappedDate);
     } else if (newDate > endOfYear) {
-      onDateChange(endOfYear);
+      // Went past Dec 31, wrap to start of year
+      const daysAfterEnd = Math.ceil((newDate.getTime() - endOfYear.getTime()) / (1000 * 60 * 60 * 24));
+      const wrappedDate = new Date(year, 0, 1);
+      wrappedDate.setDate(wrappedDate.getDate() + daysAfterEnd - 1);
+      onDateChange(wrappedDate);
     } else {
       onDateChange(newDate);
     }
-  }, [selectedDate, startOfYear, endOfYear, onDateChange]);
+  }, [selectedDate, startOfYear, endOfYear, year, onDateChange]);
+
+  // Adjust date by weeks, wrapping to nearest same weekday within the year
+  const adjustDateWeekly = useCallback((weeks: number) => {
+    const newDate = new Date(selectedDate);
+    newDate.setDate(newDate.getDate() + weeks * 7);
+
+    // Check if we need to wrap
+    if (newDate >= startOfYear && newDate <= endOfYear) {
+      onDateChange(newDate);
+      return;
+    }
+
+    // Find the nearest same weekday within the year
+    const targetWeekday = selectedDate.getDay();
+
+    if (newDate < startOfYear) {
+      // Wrap to December, find nearest matching weekday to Dec 31
+      const dec31 = new Date(year, 11, 31);
+      const dec31Weekday = dec31.getDay();
+      // Calculate days to subtract to get to the target weekday
+      let daysBack = (dec31Weekday - targetWeekday + 7) % 7;
+      if (daysBack === 0) daysBack = 0; // Dec 31 is already the target weekday
+      const wrappedDate = new Date(year, 11, 31 - daysBack);
+      onDateChange(wrappedDate);
+    } else {
+      // Wrap to January, find nearest matching weekday to Jan 1
+      const jan1 = new Date(year, 0, 1);
+      const jan1Weekday = jan1.getDay();
+      // Calculate days to add to get to the target weekday
+      let daysForward = (targetWeekday - jan1Weekday + 7) % 7;
+      if (daysForward === 0) daysForward = 0; // Jan 1 is already the target weekday
+      const wrappedDate = new Date(year, 0, 1 + daysForward);
+      onDateChange(wrappedDate);
+    }
+  }, [selectedDate, startOfYear, endOfYear, year, onDateChange]);
 
   // Format date as "Mon DD" (e.g., "Jan 15")
   const formattedDate = useMemo(() => {
@@ -182,8 +225,8 @@ export default function DateControls({ selectedDate, onDateChange, isDark = true
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {/* Date picker with increment/decrement buttons */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-        <button onClick={() => adjustDate(-7)} style={smallButtonStyle}>-7d</button>
-        <button onClick={() => adjustDate(-1)} style={smallButtonStyle}>-1d</button>
+        <button onClick={() => adjustDateWeekly(-1)} style={smallButtonStyle}>-7d</button>
+        <button onClick={() => adjustDateDaily(-1)} style={smallButtonStyle}>-1d</button>
         <div style={{ position: 'relative' }}>
           <button
             ref={buttonRef}
@@ -260,8 +303,8 @@ export default function DateControls({ selectedDate, onDateChange, isDark = true
             document.body
           )}
         </div>
-        <button onClick={() => adjustDate(1)} style={smallButtonStyle}>+1d</button>
-        <button onClick={() => adjustDate(7)} style={smallButtonStyle}>+7d</button>
+        <button onClick={() => adjustDateDaily(1)} style={smallButtonStyle}>+1d</button>
+        <button onClick={() => adjustDateWeekly(1)} style={smallButtonStyle}>+7d</button>
       </div>
 
       {/* Day of year slider */}
