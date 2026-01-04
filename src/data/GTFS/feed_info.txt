@@ -1,2 +1,2 @@
 feed_publisher_name,feed_publisher_url,feed_lang,default_lang,feed_start_date,feed_end_date,feed_version,feed_contact_email,feed_contact_url
-Amtrak,http://www.amtrak.com,en,en,20260103,20260109,20260102,DL_DTGTFSsupport@Amtrak.com,http://www.amtrak.com
+Amtrak,http://www.amtrak.com,en,en,20260104,20260110,20260103,DL_DTGTFSsupport@Amtrak.com,http://www.amtrak.com
