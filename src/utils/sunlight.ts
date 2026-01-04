@@ -132,26 +132,22 @@ function calculateSunlightPhase(coord: Coordinate, time: Date): SunlightPhase {
   const [lat, lng] = coord;
   const times = SunCalc.getTimes(time, lat, lng);
 
-  // If before sunrise
-  if (time < times.sunrise) {
-    // Check if we're in dawn period (nautical twilight to sunrise)
-    if (time >= times.dawn) {
-      return 'dawn';
-    }
-    return 'night';
+  // Dawn = astronomical dawn (nightEnd) to sunrise
+  if (time >= times.nightEnd && time < times.sunrise) {
+    return 'dawn';
   }
 
-  // If after sunset
-  if (time > times.sunset) {
-    // Check if we're in dusk period (sunset to nautical dusk)
-    if (time <= times.dusk) {
-      return 'dusk';
-    }
-    return 'night';
+  // Day = sunrise to sunset
+  if (time >= times.sunrise && time < times.sunset) {
+    return 'day';
   }
 
-  // Between sunrise and sunset
-  return 'day';
+  // Dusk = sunset to astronomical dusk (night)
+  if (time >= times.sunset && time < times.night) {
+    return 'dusk';
+  }
+
+  return 'night';
 }
 
 /**

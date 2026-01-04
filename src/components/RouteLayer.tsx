@@ -19,17 +19,7 @@ function getSunlightColor(phase: SunlightPhase, intensity: number): string {
   const clampedIntensity = Math.max(0, Math.min(1, intensity));
 
   switch (phase) {
-    case 'night':
-      return 'rgba(0, 77, 153, 1)';
-
     case 'dawn': {
-      const dawnRed = 255;
-      const dawnGreen = Math.floor(100 + (149 - 100) * clampedIntensity);
-      const dawnBlue = 0;
-      return `rgb(${dawnRed}, ${dawnGreen}, ${dawnBlue})`;
-    }
-
-    case 'dusk': {
       const duskRed = Math.floor(168 + (255 - 168) * clampedIntensity);
       const duskGreen = Math.floor(85 + (100 - 85) * clampedIntensity);
       const duskBlue = Math.floor(247 - 247 * clampedIntensity);
@@ -42,6 +32,16 @@ function getSunlightColor(phase: SunlightPhase, intensity: number): string {
       const dayBlue = 0;
       return `rgb(${dayRed}, ${dayGreen}, ${dayBlue})`;
     }
+
+    case 'dusk': {
+      const dawnRed = 255;
+      const dawnGreen = Math.floor(100 + (149 - 100) * clampedIntensity);
+      const dawnBlue = 0;
+      return `rgb(${dawnRed}, ${dawnGreen}, ${dawnBlue})`;
+    }
+
+    case 'night':
+      return 'rgba(0, 77, 153, 1)';
 
     default:
       return 'rgb(128, 128, 128)';
