@@ -1,15 +1,25 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { AppSettings } from '../types';
+import type { AppSettings, CategoryVisibility } from '../types';
 
 const STORAGE_KEY = 'amtrak-map-settings';
 
 type EastWestDirection = 'eastbound' | 'westbound';
 type NorthSouthDirection = 'northbound' | 'southbound';
+type VisibleCategory = keyof CategoryVisibility;
 
 interface StoredSettings {
   selectedDate: string; // ISO date string
   globalEastWestDirection: EastWestDirection;
   globalNorthSouthDirection: NorthSouthDirection;
+  categoryVisibility?: CategoryVisibility;
+}
+
+function getDefaultCategoryVisibility(): CategoryVisibility {
+  return {
+    'Long-Distance': true,
+    'State-Supported': true,
+    'Northeast Corridor': true,
+  };
 }
 
 function getDefaultSettings(): AppSettings {
@@ -17,6 +27,7 @@ function getDefaultSettings(): AppSettings {
     selectedDate: new Date(),
     globalEastWestDirection: 'westbound',
     globalNorthSouthDirection: 'southbound',
+    categoryVisibility: getDefaultCategoryVisibility(),
   };
 }
 
@@ -29,6 +40,7 @@ function loadSettingsFromStorage(): AppSettings {
         selectedDate: new Date(parsed.selectedDate),
         globalEastWestDirection: parsed.globalEastWestDirection,
         globalNorthSouthDirection: parsed.globalNorthSouthDirection,
+        categoryVisibility: parsed.categoryVisibility ?? getDefaultCategoryVisibility(),
       };
     }
   } catch (e) {
@@ -43,6 +55,7 @@ function saveSettingsToStorage(settings: AppSettings): void {
       selectedDate: settings.selectedDate.toISOString(),
       globalEastWestDirection: settings.globalEastWestDirection,
       globalNorthSouthDirection: settings.globalNorthSouthDirection,
+      categoryVisibility: settings.categoryVisibility,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toStore));
   } catch (e) {
@@ -70,6 +83,16 @@ export function useAppSettings() {
     setSettings(prev => ({ ...prev, globalNorthSouthDirection: direction }));
   }, []);
 
+  const toggleCategoryVisibility = useCallback((category: VisibleCategory) => {
+    setSettings(prev => ({
+      ...prev,
+      categoryVisibility: {
+        ...prev.categoryVisibility,
+        [category]: !prev.categoryVisibility[category],
+      },
+    }));
+  }, []);
+
   const resetToDefaults = useCallback(() => {
     setSettings(getDefaultSettings());
   }, []);
@@ -79,6 +102,7 @@ export function useAppSettings() {
     setSelectedDate,
     setEastWestDirection,
     setNorthSouthDirection,
+    toggleCategoryVisibility,
     resetToDefaults,
   };
 }

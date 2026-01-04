@@ -12,7 +12,44 @@ import type {
   ProcessedTrip,
   GTFSStop,
   GTFSData,
+  RouteCategory,
 } from '../types';
+import routeCategoriesData from '../data/route-categories.txt?raw';
+
+// ============================================================================
+// Route Categories Helper
+// ============================================================================
+
+function parseRouteCategories(): Map<string, RouteCategory> {
+  const categories = new Map<string, RouteCategory>();
+  const lines = routeCategoriesData.split('\n');
+
+  // Skip header line
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+
+    const parts = line.split(',');
+    if (parts.length >= 6) {
+      const routeId = parts[0];
+      const category = parts[5] as RouteCategory;
+      if (routeId && category) {
+        categories.set(routeId, category);
+      }
+    }
+  }
+
+  return categories;
+}
+
+function applyCategoriesToRoutes(routes: ProcessedRoute[]): ProcessedRoute[] {
+  const categories = parseRouteCategories();
+
+  return routes.map(route => ({
+    ...route,
+    category: categories.get(route.routeId),
+  }));
+}
 
 // ============================================================================
 // Context Types
@@ -98,8 +135,11 @@ export function GTFSDataProvider({
         data.stops,
         data.stopTimes
       );
-      validateProcessedRoutes(processedRoutes);
-      setRoutes(processedRoutes);
+
+      // Apply route categories
+      const routesWithCategories = applyCategoriesToRoutes(processedRoutes);
+      validateProcessedRoutes(routesWithCategories);
+      setRoutes(routesWithCategories);
 
       // Process schedules
       console.log('GTFSDataProvider: Processing schedules...');

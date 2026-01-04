@@ -114,6 +114,11 @@ export type DirectionType = "eastbound" | "westbound" | "northbound" | "southbou
 export type DirectionAxis = "east-west" | "north-south";
 
 /**
+ * Route category type
+ */
+export type RouteCategory = 'Long-Distance' | 'State-Supported' | 'Northeast Corridor' | 'Thruway' | 'Commuter';
+
+/**
  * Processed route combining GTFS data for UI consumption
  * Built from: routes.txt + trips.txt + shapes.txt
  */
@@ -126,6 +131,7 @@ export interface ProcessedRoute {
   shapeIds: string[];                 // Unique shape_ids for this route
   color: string;                      // From route_color
   url: string;                        // From route_url
+  category?: RouteCategory;           // Route category (Long-Distance, State-Supported, etc.)
 }
 
 /**
@@ -196,12 +202,22 @@ export interface TimePoint {
 // ============================================================================
 
 /**
+ * Category visibility settings
+ */
+export interface CategoryVisibility {
+  'Long-Distance': boolean;
+  'State-Supported': boolean;
+  'Northeast Corridor': boolean;
+}
+
+/**
  * Global application settings
  */
 export interface AppSettings {
   selectedDate: Date;
   globalEastWestDirection: "eastbound" | "westbound";
   globalNorthSouthDirection: "northbound" | "southbound";
+  categoryVisibility: CategoryVisibility;
 }
 
 /**

@@ -3,6 +3,7 @@ import USMap from './components/USMap';
 import AllRoutesLayer from './components/AllRoutesLayer';
 import DateControls from './components/DateControls';
 import DirectionControls from './components/DirectionControls';
+import CategoryControls from './components/CategoryControls';
 import ControlPanel from './components/ControlPanel';
 import { useAppSettings } from './hooks/useAppSettings';
 import { useDarkMode } from './hooks/useDarkMode';
@@ -14,6 +15,7 @@ function App() {
     setSelectedDate,
     setEastWestDirection,
     setNorthSouthDirection,
+    toggleCategoryVisibility,
   } = useAppSettings();
   const isDark = useDarkMode();
   const isMobile = useIsMobile();
@@ -31,7 +33,7 @@ function App() {
         </USMap>
 
         {/* Title */}
-        <div style={{ position: 'fixed', top: 10, left: 10, zIndex: 9999 }}>
+        <div style={{ position: 'fixed', top: 16, left: 16, zIndex: 9999 }}>
           <h1 style={{
             margin: 0,
             fontSize: 28,
@@ -60,13 +62,20 @@ function App() {
           }}>
             {/* Settings panel first (on top when stacked) */}
             <ControlPanel title="Settings" isDark={isDark} defaultExpanded={false}>
-              <DirectionControls
-                eastWestDirection={settings.globalEastWestDirection}
-                northSouthDirection={settings.globalNorthSouthDirection}
-                onEastWestChange={setEastWestDirection}
-                onNorthSouthChange={setNorthSouthDirection}
-                isDark={isDark}
-              />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <CategoryControls
+                  categoryVisibility={settings.categoryVisibility}
+                  onToggle={toggleCategoryVisibility}
+                  isDark={isDark}
+                />
+                <DirectionControls
+                  eastWestDirection={settings.globalEastWestDirection}
+                  northSouthDirection={settings.globalNorthSouthDirection}
+                  onEastWestChange={setEastWestDirection}
+                  onNorthSouthChange={setNorthSouthDirection}
+                  isDark={isDark}
+                />
+              </div>
             </ControlPanel>
 
             {/* Date controls panel */}
@@ -112,16 +121,23 @@ function App() {
               bottom: 10,
               right: 10,
               zIndex: 9999,
-              width: 260,
+              width: 280,
             }}>
               <ControlPanel title="Settings" isDark={isDark} defaultExpanded={true}>
-                <DirectionControls
-                  eastWestDirection={settings.globalEastWestDirection}
-                  northSouthDirection={settings.globalNorthSouthDirection}
-                  onEastWestChange={setEastWestDirection}
-                  onNorthSouthChange={setNorthSouthDirection}
-                  isDark={isDark}
-                />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <CategoryControls
+                    categoryVisibility={settings.categoryVisibility}
+                    onToggle={toggleCategoryVisibility}
+                    isDark={isDark}
+                  />
+                  <DirectionControls
+                    eastWestDirection={settings.globalEastWestDirection}
+                    northSouthDirection={settings.globalNorthSouthDirection}
+                    onEastWestChange={setEastWestDirection}
+                    onNorthSouthChange={setNorthSouthDirection}
+                    isDark={isDark}
+                  />
+                </div>
               </ControlPanel>
             </div>
           </>

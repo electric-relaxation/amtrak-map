@@ -132,6 +132,22 @@ const AllRoutesLayer = ({
     const usedShapeIds = new Set<string>();
 
     for (const route of routes) {
+      // Filter by category visibility
+      const category = route.category;
+      if (category === 'Long-Distance' && !globalSettings.categoryVisibility['Long-Distance']) {
+        continue;
+      }
+      if (category === 'State-Supported' && !globalSettings.categoryVisibility['State-Supported']) {
+        continue;
+      }
+      if (category === 'Northeast Corridor' && !globalSettings.categoryVisibility['Northeast Corridor']) {
+        continue;
+      }
+      // Skip Thruway and Commuter routes (not shown on map)
+      if (category === 'Thruway' || category === 'Commuter') {
+        continue;
+      }
+
       // Get all schedules for this route
       const allSchedules = schedules.get(route.routeId) || [];
 
