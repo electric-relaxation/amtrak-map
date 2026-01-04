@@ -33,7 +33,7 @@ function App() {
         </USMap>
 
         {/* Title */}
-        <div style={{ position: 'fixed', top: 16, left: 16, zIndex: 9999 }}>
+        <div style={{ position: 'fixed', top: 16, left: 16, zIndex: 9999, userSelect: 'none', WebkitUserSelect: 'none' }}>
           <h1 style={{
             margin: 0,
             fontSize: 28,
@@ -59,6 +59,8 @@ function App() {
             gap: 8,
             padding: 10,
             paddingBottom: 'max(10px, env(safe-area-inset-bottom))',
+            userSelect: 'none',
+            WebkitUserSelect: 'none',
           }}>
             {/* Settings panel first (on top when stacked) */}
             <ControlPanel title="Settings" isDark={isDark} defaultExpanded={false}>
@@ -101,6 +103,8 @@ function App() {
               left: 10,
               zIndex: 9999,
               width: 340,
+              userSelect: 'none',
+              WebkitUserSelect: 'none'
             }}>
               <ControlPanel
                 title={settings.selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }).replace(',', '')}
@@ -122,6 +126,8 @@ function App() {
               right: 10,
               zIndex: 9999,
               width: 280,
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
             }}>
               <ControlPanel title="Settings" isDark={isDark} defaultExpanded={true}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

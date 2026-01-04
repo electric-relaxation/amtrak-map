@@ -117,6 +117,21 @@ export default function DateControls({ selectedDate, onDateChange, isDark = true
     onDateChange(date);
   }, [onDateChange]);
 
+  // Adjust date by days, clamped to current year
+  const adjustDate = useCallback((days: number) => {
+    const newDate = new Date(selectedDate);
+    newDate.setDate(newDate.getDate() + days);
+
+    // Clamp to current year
+    if (newDate < startOfYear) {
+      onDateChange(startOfYear);
+    } else if (newDate > endOfYear) {
+      onDateChange(endOfYear);
+    } else {
+      onDateChange(newDate);
+    }
+  }, [selectedDate, startOfYear, endOfYear, onDateChange]);
+
   // Format date as "Mon DD" (e.g., "Jan 15")
   const formattedDate = useMemo(() => {
     return selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -131,7 +146,19 @@ export default function DateControls({ selectedDate, onDateChange, isDark = true
     transition: 'background-color 0.15s',
     backgroundColor: isActive ? activeColor : colors.buttonBg,
     color: isActive ? '#ffffff' : colors.buttonText,
+    userSelect: 'none',
   });
+
+  const smallButtonStyle: React.CSSProperties = {
+    padding: '4px 6px',
+    fontSize: 11,
+    borderRadius: 4,
+    border: 'none',
+    cursor: 'pointer',
+    backgroundColor: colors.buttonBg,
+    color: colors.buttonText,
+    userSelect: 'none',
+  };
 
   // Custom CSS variables for react-day-picker theming
   const calendarStyle: React.CSSProperties = {
@@ -153,99 +180,107 @@ export default function DateControls({ selectedDate, onDateChange, isDark = true
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {/* Day of year slider with date picker */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <input
-            type="range"
-            min="1"
-            max="365"
-            value={dayOfYear}
-            onChange={handleSliderChange}
+      {/* Date picker with increment/decrement buttons */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+        <button onClick={() => adjustDate(-7)} style={smallButtonStyle}>-7d</button>
+        <button onClick={() => adjustDate(-1)} style={smallButtonStyle}>-1d</button>
+        <div style={{ position: 'relative' }}>
+          <button
+            ref={buttonRef}
+            onClick={() => setIsCalendarOpen(!isCalendarOpen)}
             style={{
-              flex: 1,
-              height: 8,
+              padding: '4px 8px',
+              fontSize: 12,
+              backgroundColor: colors.inputBg,
+              border: `1px solid ${colors.inputBorder}`,
               borderRadius: 4,
+              color: colors.text,
+              minWidth: 60,
+              textAlign: 'center',
               cursor: 'pointer',
-              accentColor: '#3b82f6',
+              userSelect: 'none',
             }}
-          />
-          <div style={{ position: 'relative' }}>
-            <button
-              ref={buttonRef}
-              onClick={() => setIsCalendarOpen(!isCalendarOpen)}
+          >
+            {formattedDate}
+          </button>
+          {isCalendarOpen && buttonRect && createPortal(
+            <div
+              ref={calendarRef}
               style={{
-                padding: '4px 8px',
-                fontSize: 12,
-                backgroundColor: colors.inputBg,
-                border: `1px solid ${colors.inputBorder}`,
-                borderRadius: 4,
-                color: colors.text,
-                minWidth: 60,
-                textAlign: 'center',
-                cursor: 'pointer',
+                position: 'fixed',
+                top: buttonRect.top - 308,
+                left: buttonRect.left + buttonRect.width / 2,
+                transform: 'translateX(-50%)',
+                zIndex: 10000,
               }}
             >
-              {formattedDate}
-            </button>
-            {isCalendarOpen && buttonRect && createPortal(
-              <div
-                ref={calendarRef}
-                style={{
-                  position: 'fixed',
-                  top: buttonRect.top - 308,
-                  right: window.innerWidth - buttonRect.right,
-                  zIndex: 10000,
+              <style>{`
+                @media (hover: hover) {
+                  .rdp-day_button:hover:not([disabled]) {
+                    background-color: ${isDark ? '#374151' : '#e5e7eb'} !important;
+                    border-radius: 6px;
+                  }
+                  .rdp-button_previous:hover,
+                  .rdp-button_next:hover {
+                    background-color: ${isDark ? '#374151' : '#e5e7eb'} !important;
+                    border-radius: 4px;
+                  }
+                }
+                .rdp-day_button:focus,
+                .rdp-button_previous:focus,
+                .rdp-button_next:focus {
+                  outline: none;
+                }
+              `}</style>
+              <DayPicker
+                mode="single"
+                selected={selectedDate}
+                onSelect={handleDaySelect}
+                month={selectedDate}
+                onMonthChange={(month) => {
+                  // Keep within current year
+                  if (month.getFullYear() === year) {
+                    onDateChange(month);
+                  }
                 }}
-              >
-                <style>{`
-                  @media (hover: hover) {
-                    .rdp-day_button:hover:not([disabled]) {
-                      background-color: ${isDark ? '#374151' : '#e5e7eb'} !important;
-                      border-radius: 6px;
-                    }
-                    .rdp-button_previous:hover,
-                    .rdp-button_next:hover {
-                      background-color: ${isDark ? '#374151' : '#e5e7eb'} !important;
-                      border-radius: 4px;
-                    }
-                  }
-                  .rdp-day_button:focus,
-                  .rdp-button_previous:focus,
-                  .rdp-button_next:focus {
-                    outline: none;
-                  }
-                `}</style>
-                <DayPicker
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={handleDaySelect}
-                  month={selectedDate}
-                  onMonthChange={(month) => {
-                    // Keep within current year
-                    if (month.getFullYear() === year) {
-                      onDateChange(month);
-                    }
-                  }}
-                  startMonth={startOfYear}
-                  endMonth={endOfYear}
-                  disabled={{ before: startOfYear, after: endOfYear }}
-                  fixedWeeks
-                  showOutsideDays
-                  style={calendarStyle}
-                  classNames={{
-                    today: 'rdp-today',
-                  }}
-                  modifiersStyles={{
-                    outside: { opacity: 0.3 },
-                  }}
-                />
-              </div>,
-              document.body
-            )}
-          </div>
+                startMonth={startOfYear}
+                endMonth={endOfYear}
+                disabled={{ before: startOfYear, after: endOfYear }}
+                fixedWeeks
+                showOutsideDays
+                style={calendarStyle}
+                classNames={{
+                  today: 'rdp-today',
+                }}
+                modifiersStyles={{
+                  outside: { opacity: 0.3 },
+                }}
+              />
+            </div>,
+            document.body
+          )}
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: colors.textSubtle, paddingRight: 76 }}>
+        <button onClick={() => adjustDate(1)} style={smallButtonStyle}>+1d</button>
+        <button onClick={() => adjustDate(7)} style={smallButtonStyle}>+7d</button>
+      </div>
+
+      {/* Day of year slider */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <input
+          type="range"
+          min="1"
+          max="365"
+          value={dayOfYear}
+          onChange={handleSliderChange}
+          style={{
+            width: '100%',
+            height: 8,
+            borderRadius: 4,
+            cursor: 'pointer',
+            accentColor: '#3b82f6',
+          }}
+        />
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: colors.textSubtle }}>
           <span>Jan</span>
           <span>Apr</span>
           <span>Jul</span>
