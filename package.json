@@ -13,6 +13,7 @@
     "date-fns": "^4.1.0",
     "maplibre-gl": "^5.15.0",
     "react": "^19.2.3",
+    "react-day-picker": "^9.13.0",
     "react-dom": "^19.2.3",
     "react-map-gl": "^8.1.0",
     "suncalc": "^1.9.0",

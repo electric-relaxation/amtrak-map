@@ -1,4 +1,7 @@
-import { useMemo, useCallback, useRef } from 'react';
+import { useMemo, useCallback, useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { DayPicker } from 'react-day-picker';
+import 'react-day-picker/style.css';
 
 interface DateControlsProps {
   selectedDate: Date;
@@ -32,15 +35,47 @@ function getSpecialDates(year: number) {
 }
 
 export default function DateControls({ selectedDate, onDateChange, isDark = true }: DateControlsProps) {
-  const dateInputRef = useRef<HTMLInputElement>(null);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const calendarRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
   const currentYear = new Date().getFullYear();
   const year = currentYear; // Always use current year
   const dayOfYear = getDayOfYear(selectedDate);
   const specialDates = useMemo(() => getSpecialDates(year), [year]);
 
-  // Min/max dates for current year only
-  const minDate = `${year}-01-01`;
-  const maxDate = `${year}-12-31`;
+  // Date range for current year only
+  const startOfYear = new Date(year, 0, 1);
+  const endOfYear = new Date(year, 11, 31);
+
+  // Track button position for portal positioning
+  const [buttonRect, setButtonRect] = useState<DOMRect | null>(null);
+
+  // Update button position when calendar opens
+  useEffect(() => {
+    if (isCalendarOpen && buttonRef.current) {
+      setButtonRect(buttonRef.current.getBoundingClientRect());
+    }
+  }, [isCalendarOpen]);
+
+  // Close calendar when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        calendarRef.current &&
+        !calendarRef.current.contains(event.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
+        setIsCalendarOpen(false);
+      }
+    };
+
+    if (isCalendarOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isCalendarOpen]);
 
   // Color schemes for light and dark modes
   const colors = useMemo(() => ({
@@ -53,6 +88,7 @@ export default function DateControls({ selectedDate, onDateChange, isDark = true
     buttonHover: isDark ? '#4b5563' : '#d1d5db',
     buttonText: isDark ? '#e5e7eb' : '#374151',
     sliderTrack: isDark ? '#374151' : '#d1d5db',
+    calendarBg: isDark ? '#1f2937' : '#ffffff',
   }), [isDark]);
 
   // Check if current date matches a special date
@@ -66,16 +102,12 @@ export default function DateControls({ selectedDate, onDateChange, isDark = true
     onDateChange(dateFromDayOfYear(newDayOfYear, year));
   }, [onDateChange, year]);
 
-  const handleDateInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const newDate = new Date(e.target.value + 'T12:00:00');
-    if (!isNaN(newDate.getTime())) {
-      onDateChange(newDate);
+  const handleDaySelect = useCallback((date: Date | undefined) => {
+    if (date) {
+      onDateChange(date);
+      setIsCalendarOpen(false);
     }
   }, [onDateChange]);
-
-  const openDatePicker = useCallback(() => {
-    dateInputRef.current?.showPicker();
-  }, []);
 
   const setToday = useCallback(() => {
     onDateChange(new Date());
@@ -90,13 +122,6 @@ export default function DateControls({ selectedDate, onDateChange, isDark = true
     return selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }, [selectedDate]);
 
-  // Format date for input[type="date"] - ensure it's in current year
-  const dateInputValue = useMemo(() => {
-    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-    const day = String(selectedDate.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }, [selectedDate, year]);
-
   const buttonStyle = (isActive: boolean, activeColor: string): React.CSSProperties => ({
     padding: '6px 10px',
     fontSize: 12,
@@ -107,6 +132,24 @@ export default function DateControls({ selectedDate, onDateChange, isDark = true
     backgroundColor: isActive ? activeColor : colors.buttonBg,
     color: isActive ? '#ffffff' : colors.buttonText,
   });
+
+  // Custom CSS variables for react-day-picker theming
+  const calendarStyle: React.CSSProperties = {
+    '--rdp-accent-color': '#3b82f6',
+    '--rdp-accent-background-color': isDark ? '#1e3a5f' : '#dbeafe',
+    '--rdp-day-height': '32px',
+    '--rdp-day-width': '32px',
+    '--rdp-day_button-height': '32px',
+    '--rdp-day_button-width': '32px',
+    backgroundColor: colors.calendarBg,
+    color: colors.text,
+    padding: '8px',
+    borderRadius: '8px',
+    border: `1px solid ${colors.inputBorder}`,
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+    height: 300,
+    overflow: 'hidden',
+  } as React.CSSProperties;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -129,7 +172,8 @@ export default function DateControls({ selectedDate, onDateChange, isDark = true
           />
           <div style={{ position: 'relative' }}>
             <button
-              onClick={openDatePicker}
+              ref={buttonRef}
+              onClick={() => setIsCalendarOpen(!isCalendarOpen)}
               style={{
                 padding: '4px 8px',
                 fontSize: 12,
@@ -144,23 +188,61 @@ export default function DateControls({ selectedDate, onDateChange, isDark = true
             >
               {formattedDate}
             </button>
-            <input
-              ref={dateInputRef}
-              type="date"
-              value={dateInputValue}
-              min={minDate}
-              max={maxDate}
-              onChange={handleDateInputChange}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                opacity: 0,
-                cursor: 'pointer',
-              }}
-            />
+            {isCalendarOpen && buttonRect && createPortal(
+              <div
+                ref={calendarRef}
+                style={{
+                  position: 'fixed',
+                  top: buttonRect.top - 308,
+                  right: window.innerWidth - buttonRect.right,
+                  zIndex: 10000,
+                }}
+              >
+                <style>{`
+                  @media (hover: hover) {
+                    .rdp-day_button:hover:not([disabled]) {
+                      background-color: ${isDark ? '#374151' : '#e5e7eb'} !important;
+                      border-radius: 6px;
+                    }
+                    .rdp-button_previous:hover,
+                    .rdp-button_next:hover {
+                      background-color: ${isDark ? '#374151' : '#e5e7eb'} !important;
+                      border-radius: 4px;
+                    }
+                  }
+                  .rdp-day_button:focus,
+                  .rdp-button_previous:focus,
+                  .rdp-button_next:focus {
+                    outline: none;
+                  }
+                `}</style>
+                <DayPicker
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={handleDaySelect}
+                  month={selectedDate}
+                  onMonthChange={(month) => {
+                    // Keep within current year
+                    if (month.getFullYear() === year) {
+                      onDateChange(month);
+                    }
+                  }}
+                  startMonth={startOfYear}
+                  endMonth={endOfYear}
+                  disabled={{ before: startOfYear, after: endOfYear }}
+                  fixedWeeks
+                  showOutsideDays
+                  style={calendarStyle}
+                  classNames={{
+                    today: 'rdp-today',
+                  }}
+                  modifiersStyles={{
+                    outside: { opacity: 0.3 },
+                  }}
+                />
+              </div>,
+              document.body
+            )}
           </div>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: colors.textSubtle, paddingRight: 76 }}>
