@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useRef } from 'react';
 
 interface DateControlsProps {
   selectedDate: Date;
@@ -32,9 +32,15 @@ function getSpecialDates(year: number) {
 }
 
 export default function DateControls({ selectedDate, onDateChange, isDark = true }: DateControlsProps) {
-  const year = selectedDate.getFullYear();
+  const dateInputRef = useRef<HTMLInputElement>(null);
+  const currentYear = new Date().getFullYear();
+  const year = currentYear; // Always use current year
   const dayOfYear = getDayOfYear(selectedDate);
   const specialDates = useMemo(() => getSpecialDates(year), [year]);
+
+  // Min/max dates for current year only
+  const minDate = `${year}-01-01`;
+  const maxDate = `${year}-12-31`;
 
   // Color schemes for light and dark modes
   const colors = useMemo(() => ({
@@ -67,6 +73,10 @@ export default function DateControls({ selectedDate, onDateChange, isDark = true
     }
   }, [onDateChange]);
 
+  const openDatePicker = useCallback(() => {
+    dateInputRef.current?.showPicker();
+  }, []);
+
   const setToday = useCallback(() => {
     onDateChange(new Date());
   }, [onDateChange]);
@@ -75,10 +85,17 @@ export default function DateControls({ selectedDate, onDateChange, isDark = true
     onDateChange(date);
   }, [onDateChange]);
 
-  // Format date for input[type="date"]
-  const dateInputValue = useMemo(() => {
-    return selectedDate.toISOString().split('T')[0];
+  // Format date as "Mon DD" (e.g., "Jan 15")
+  const formattedDate = useMemo(() => {
+    return selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }, [selectedDate]);
+
+  // Format date for input[type="date"] - ensure it's in current year
+  const dateInputValue = useMemo(() => {
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(selectedDate.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, [selectedDate, year]);
 
   const buttonStyle = (isActive: boolean, activeColor: string): React.CSSProperties => ({
     padding: '6px 10px',
@@ -110,22 +127,43 @@ export default function DateControls({ selectedDate, onDateChange, isDark = true
               accentColor: '#3b82f6',
             }}
           />
-          <input
-            type="date"
-            value={dateInputValue}
-            onChange={handleDateInputChange}
-            style={{
-              padding: '4px 8px',
-              fontSize: 12,
-              backgroundColor: colors.inputBg,
-              border: `1px solid ${colors.inputBorder}`,
-              borderRadius: 4,
-              color: colors.text,
-              outline: 'none',
-            }}
-          />
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={openDatePicker}
+              style={{
+                padding: '4px 8px',
+                fontSize: 12,
+                backgroundColor: colors.inputBg,
+                border: `1px solid ${colors.inputBorder}`,
+                borderRadius: 4,
+                color: colors.text,
+                minWidth: 60,
+                textAlign: 'center',
+                cursor: 'pointer',
+              }}
+            >
+              {formattedDate}
+            </button>
+            <input
+              ref={dateInputRef}
+              type="date"
+              value={dateInputValue}
+              min={minDate}
+              max={maxDate}
+              onChange={handleDateInputChange}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                opacity: 0,
+                cursor: 'pointer',
+              }}
+            />
+          </div>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: colors.textSubtle, paddingRight: 115 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: colors.textSubtle, paddingRight: 76 }}>
           <span>Jan</span>
           <span>Apr</span>
           <span>Jul</span>
