@@ -27,12 +27,6 @@ const USMap = ({ children }: USMapProps) => {
     fitBoundsOptions: { padding: 16 },
   };
 
-  // Bounds for continental US
-  const maxBounds: [[number, number], [number, number]] = [
-    [-130.0, 22.0], // Southwest [lng, lat]
-    [-60.0, 52.0],  // Northeast [lng, lat]
-  ];
-
   // Create a minimal map style with just a background color
   const mapStyle: StyleSpecification = useMemo(() => ({
     version: 8,

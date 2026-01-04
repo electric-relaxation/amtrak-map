@@ -7,6 +7,7 @@ import {
   validateProcessedTrips,
   buildStopIndex,
 } from '../utils/gtfsProcessor';
+import { applyRouteMerges } from '../utils/routeMerger';
 import type {
   ProcessedRoute,
   ProcessedTrip,
@@ -139,7 +140,6 @@ export function GTFSDataProvider({
       // Apply route categories
       const routesWithCategories = applyCategoriesToRoutes(processedRoutes);
       validateProcessedRoutes(routesWithCategories);
-      setRoutes(routesWithCategories);
 
       // Process schedules
       console.log('GTFSDataProvider: Processing schedules...');
@@ -149,6 +149,12 @@ export function GTFSDataProvider({
         data.stops,
         data.calendar
       );
+
+      // Merge duplicate routes (e.g., Illinois Zephyr + Carl Sandburg)
+      console.log('GTFSDataProvider: Merging duplicate routes...');
+      const mergedRoutes = applyRouteMerges(routesWithCategories, ProcessedTrips);
+      setRoutes(mergedRoutes);
+
       validateProcessedTrips(ProcessedTrips);
       setSchedules(ProcessedTrips);
 
