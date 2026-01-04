@@ -2,7 +2,7 @@ import * as SunCalc from 'suncalc';
 import { parseGTFSTime } from './gtfsLoader';
 import type {
   ProcessedRoute,
-  ProcessedSchedule,
+  ProcessedTrip,
   Coordinate,
   SunlightPhase,
   SunlightSegment,
@@ -216,7 +216,7 @@ function calculateSunlightIntensity(coord: Coordinate, time: Date): number {
  * ```
  */
 export function getTrainPositionAtTime(
-  schedule: ProcessedSchedule,
+  schedule: ProcessedTrip,
   targetTime: Date,
   baseDate: Date = new Date()
 ): { lat: number; lng: number; nearestStops: [string, string] } | null {
@@ -296,7 +296,7 @@ export function getTrainPositionAtTime(
  */
 export function mapShapeToSchedule(
   shapeCoords: Coordinate[],
-  schedule: ProcessedSchedule,
+  schedule: ProcessedTrip,
   baseDate: Date = new Date()
 ): { coord: Coordinate; time: Date }[] {
   if (shapeCoords.length === 0 || schedule.stops.length < 2) {
@@ -402,7 +402,7 @@ export function mapShapeToSchedule(
  */
 export function calculateRouteSegmentColors(
   _route: ProcessedRoute,
-  schedule: ProcessedSchedule,
+  schedule: ProcessedTrip,
   selectedDate: Date,
   shapeCoords?: Coordinate[],
   samplePoints: number = DEFAULT_SAMPLE_POINTS

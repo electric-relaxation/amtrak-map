@@ -4,12 +4,12 @@ import {
   processRoutes,
   processSchedules,
   validateProcessedRoutes,
-  validateProcessedSchedules,
+  validateProcessedTrips,
   buildStopIndex,
 } from '../utils/gtfsProcessor';
 import type {
   ProcessedRoute,
-  ProcessedSchedule,
+  ProcessedTrip,
   GTFSStop,
   GTFSData,
 } from '../types';
@@ -21,7 +21,7 @@ import type {
 interface GTFSDataContextType {
   // Processed data
   routes: ProcessedRoute[];
-  schedules: Map<string, ProcessedSchedule[]>;
+  schedules: Map<string, ProcessedTrip[]>;
   stops: Map<string, GTFSStop>;
 
   // Raw GTFS data (for advanced use cases)
@@ -62,7 +62,7 @@ export function GTFSDataProvider({
   errorComponent,
 }: GTFSDataProviderProps) {
   const [routes, setRoutes] = useState<ProcessedRoute[]>([]);
-  const [schedules, setSchedules] = useState<Map<string, ProcessedSchedule[]>>(new Map());
+  const [schedules, setSchedules] = useState<Map<string, ProcessedTrip[]>>(new Map());
   const [stops, setStops] = useState<Map<string, GTFSStop>>(new Map());
   const [rawData, setRawData] = useState<GTFSData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -103,14 +103,14 @@ export function GTFSDataProvider({
 
       // Process schedules
       console.log('GTFSDataProvider: Processing schedules...');
-      const processedSchedules = processSchedules(
+      const ProcessedTrips = processSchedules(
         data.trips,
         data.stopTimes,
         data.stops,
         data.calendar
       );
-      validateProcessedSchedules(processedSchedules);
-      setSchedules(processedSchedules);
+      validateProcessedTrips(ProcessedTrips);
+      setSchedules(ProcessedTrips);
 
       const endTime = performance.now();
       console.log(

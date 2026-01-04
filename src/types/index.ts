@@ -161,7 +161,7 @@ export interface ProcessedStop {
  * Complete schedule for a specific trip
  * Built from: trips.txt + stop_times.txt + stops.txt + shapes.txt
  */
-export interface ProcessedSchedule {
+export interface ProcessedTrip {
   tripId: string;               // From trip_id
   routeId: string;              // From route_id
   trainNumber: string;          // From trip_short_name
@@ -264,6 +264,6 @@ export interface GTFSData {
 export interface ProcessedGTFSData {
   routes: ProcessedRoute[];
   shapes: Map<string, RouteShape>;     // Keyed by shape_id
-  schedules: Map<string, ProcessedSchedule>;  // Keyed by trip_id
+  schedules: Map<string, ProcessedTrip>;  // Keyed by trip_id
   stops: Map<string, GTFSStop>;        // Keyed by stop_id
 }

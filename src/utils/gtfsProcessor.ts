@@ -6,7 +6,7 @@ import type {
   GTFSShape,
   GTFSCalendar,
   ProcessedRoute,
-  ProcessedSchedule,
+  ProcessedTrip,
   ProcessedStop,
   RouteShape,
   DirectionAxis,
@@ -338,7 +338,7 @@ export function processRoutes(
 }
 
 /**
- * Process raw GTFS data into ProcessedSchedule format
+ * Process raw GTFS data into ProcessedTrip format
  *
  * @param trips - GTFS trips
  * @param stopTimes - GTFS stop times
@@ -351,14 +351,14 @@ export function processSchedules(
   stopTimes: GTFSStopTime[],
   stops: GTFSStop[],
   calendar: GTFSCalendar[]
-): Map<string, ProcessedSchedule[]> {
+): Map<string, ProcessedTrip[]> {
   console.log(`Processing schedules for ${trips.length} trips...`);
 
   const stopIndex = buildStopIndex(stops);
   const stopTimeIndex = buildStopTimeIndex(stopTimes);
   const calendarIndex = new Map(calendar.map(c => [c.service_id, c]));
 
-  const schedulesByRoute = new Map<string, ProcessedSchedule[]>();
+  const schedulesByRoute = new Map<string, ProcessedTrip[]>();
 
   for (const trip of trips) {
     try {
@@ -398,7 +398,7 @@ export function processSchedules(
         };
       });
 
-      const schedule: ProcessedSchedule = {
+      const schedule: ProcessedTrip = {
         tripId: trip.trip_id,
         routeId: trip.route_id,
         trainNumber: trip.trip_short_name,
@@ -585,8 +585,8 @@ export function validateProcessedRoutes(routes: ProcessedRoute[]): void {
 /**
  * Validate processed schedules and log warnings for any issues
  */
-export function validateProcessedSchedules(
-  schedules: Map<string, ProcessedSchedule[]>
+export function validateProcessedTrips(
+  schedules: Map<string, ProcessedTrip[]>
 ): void {
   console.log('Validating processed schedules...');
 

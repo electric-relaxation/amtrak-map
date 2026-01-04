@@ -3,11 +3,11 @@ import { Source, Layer } from 'react-map-gl/maplibre';
 import type { LineLayerSpecification, ExpressionSpecification } from 'maplibre-gl';
 import { calculateRouteSegmentColors } from '../utils/sunlight';
 import { useGTFSData } from '../hooks/useGTFSData';
-import type { ProcessedRoute, ProcessedSchedule, SunlightPhase } from '../types';
+import type { ProcessedRoute, ProcessedTrip, SunlightPhase } from '../types';
 
 interface RouteLayerProps {
   route: ProcessedRoute;
-  schedule: ProcessedSchedule;
+  schedule: ProcessedTrip;
   selectedDate: Date;
   isVisible?: boolean;
 }
@@ -138,7 +138,7 @@ const RouteLayer = ({ route, schedule, selectedDate, isVisible = true }: RouteLa
       'line-join': 'round',
     },
     paint: {
-      'line-width': 2.5,
+      'line-width': 5,
       'line-opacity': isVisible ? 0.9 : 0,
       ...(lineGradient ? { 'line-gradient': lineGradient } : { 'line-color': '#888888' }),
     },

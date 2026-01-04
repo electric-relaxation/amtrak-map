@@ -1,18 +1,15 @@
 /* MapLibre GL map container styles */
 
-/* Light mode background - matches map style */
 .maplibregl-map {
   background-color: #e0e0e0 !important;
 }
 
-/* Dark mode background */
 @media (prefers-color-scheme: dark) {
   .maplibregl-map {
     background-color: #1b1b1b !important;
   }
 }
 
-/* Hide attribution for cleaner look */
 .maplibregl-ctrl-attrib {
   display: none;
 }

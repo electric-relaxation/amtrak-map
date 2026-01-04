@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useGTFSData } from '../hooks/useGTFSData';
 import RouteLayer from './RouteLayer';
-import type { AppSettings, RouteSettings, ProcessedSchedule } from '../types';
+import type { AppSettings, RouteSettings, ProcessedTrip } from '../types';
 
 interface AllRoutesLayerProps {
   selectedDate: Date;
@@ -12,7 +12,7 @@ interface AllRoutesLayerProps {
 /**
  * Check if a schedule is valid for the selected date
  */
-function isScheduleValidForDate(schedule: ProcessedSchedule, date: Date): boolean {
+function isScheduleValidForDate(schedule: ProcessedTrip, date: Date): boolean {
   // Check date range
   const dateStr = date.toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD format
 
@@ -41,12 +41,12 @@ function isScheduleValidForDate(schedule: ProcessedSchedule, date: Date): boolea
  */
 function getScheduleForRoute(
   _routeId: string,
-  allSchedules: ProcessedSchedule[],
+  allSchedules: ProcessedTrip[],
   globalSettings: AppSettings,
   routeSettings: RouteSettings | undefined,
   selectedDate: Date,
   routeDirectionAxis: 'east-west' | 'north-south'
-): ProcessedSchedule | null {
+): ProcessedTrip | null {
   // Filter schedules that are valid for the selected date
   const validSchedules = allSchedules.filter(schedule =>
     isScheduleValidForDate(schedule, selectedDate)
@@ -126,11 +126,12 @@ const AllRoutesLayer = ({
 }: AllRoutesLayerProps) => {
   const { routes, schedules } = useGTFSData();
 
-  // Get schedules for all routes and memoize
-  const routeScheduleMap = useMemo(() => {
-    const map = new Map<string, ProcessedSchedule | null>();
+  // Get one schedule per route, deduplicated by shapeId to avoid drawing overlapping routes
+  const routesToRender = useMemo(() => {
+    const result: Array<{ route: typeof routes[0]; schedule: ProcessedTrip }> = [];
+    const usedShapeIds = new Set<string>();
 
-    routes.forEach(route => {
+    for (const route of routes) {
       // Get all schedules for this route
       const allSchedules = schedules.get(route.routeId) || [];
 
@@ -145,32 +146,39 @@ const AllRoutesLayer = ({
         route.directionAxis
       );
 
-      map.set(route.routeId, schedule);
-    });
+      if (!schedule) {
+        console.log(`Skipping ${route.routeName} - no schedule`);
+        continue;
+      }
 
-    return map;
+      // Skip if we've already drawn this shape (avoids duplicate routes on same track)
+      if (schedule.shapeId && usedShapeIds.has(schedule.shapeId)) {
+        console.log(`Skipping ${route.routeName} - used shapedId`);
+        continue;
+      }
+
+      if (schedule.shapeId) {
+        usedShapeIds.add(schedule.shapeId);
+      }
+
+      result.push({ route, schedule });
+    }
+
+    console.log(`Rendering ${result.length} unique routes (${routes.length} total routes)`);
+    return result;
   }, [routes, schedules, routeSettings, globalSettings, selectedDate]);
 
   return (
     <>
-      {routes.map(route => {
-        const schedule = routeScheduleMap.get(route.routeId);
-
-        if (!schedule) {
-          // No valid schedule for this route on this date/direction
-          return null;
-        }
-
-        return (
-          <RouteLayer
-            key={route.routeId}
-            route={route}
-            schedule={schedule}
-            selectedDate={selectedDate}
-            isVisible={true}
-          />
-        );
-      })}
+      {routesToRender.map(({ route, schedule }) => (
+        <RouteLayer
+          key={route.routeId}
+          route={route}
+          schedule={schedule}
+          selectedDate={selectedDate}
+          isVisible={true}
+        />
+      ))}
     </>
   );
 };

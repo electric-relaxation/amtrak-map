@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useGTFSDataContext } from '../contexts/GTFSDataContext';
 import type {
   ProcessedRoute,
-  ProcessedSchedule,
+  ProcessedTrip,
   GTFSStop,
   DirectionAxis,
 } from '../types';
@@ -105,7 +105,7 @@ export function useAllRoutes(options?: {
  * Hook to get all schedules for a specific route
  *
  * @param routeId - The route_id to get schedules for
- * @returns Array of ProcessedSchedule for this route
+ * @returns Array of ProcessedTrip for this route
  *
  * @example
  * ```tsx
@@ -113,7 +113,7 @@ export function useAllRoutes(options?: {
  * console.log(`${schedules.length} trips for this route`);
  * ```
  */
-export function useRouteSchedules(routeId: string): ProcessedSchedule[] {
+export function useRouteSchedules(routeId: string): ProcessedTrip[] {
   const { schedules } = useGTFSDataContext();
 
   return useMemo(() => {
@@ -127,7 +127,7 @@ export function useRouteSchedules(routeId: string): ProcessedSchedule[] {
  * @param routeId - The route_id to get schedule for
  * @param direction - The direction (trip_headsign value or 'northbound'/'southbound'/'eastbound'/'westbound')
  * @param tripIndex - Optional index if multiple trips match (defaults to 0)
- * @returns ProcessedSchedule or undefined if not found
+ * @returns ProcessedTrip or undefined if not found
  *
  * @example
  * ```tsx
@@ -151,7 +151,7 @@ export function useRouteSchedule(
   routeId: string,
   direction: string,
   tripIndex: number = 0
-): ProcessedSchedule | undefined {
+): ProcessedTrip | undefined {
   const { schedules } = useGTFSDataContext();
 
   return useMemo(() => {
@@ -224,14 +224,14 @@ export function useRouteTrainNumbers(routeId: string): string[] {
 export function useSchedulesForDate(
   routeId: string,
   date: Date = new Date()
-): ProcessedSchedule[] {
+): ProcessedTrip[] {
   const { schedules } = useGTFSDataContext();
 
   return useMemo(() => {
     const routeSchedules = schedules.get(routeId) || [];
     const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
 
-    const dayNames: (keyof ProcessedSchedule['operatingDays'])[] = [
+    const dayNames: (keyof ProcessedTrip['operatingDays'])[] = [
       'sunday',
       'monday',
       'tuesday',

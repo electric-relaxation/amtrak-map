@@ -1,5 +1,5 @@
-import { ReactNode, useMemo } from 'react';
-import Map, { Source, Layer } from 'react-map-gl/maplibre';
+import { ReactNode, useMemo, useRef } from 'react';
+import Map, { Source, Layer, MapRef } from 'react-map-gl/maplibre';
 import type { StyleSpecification, FillLayerSpecification, LineLayerSpecification } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import './USMap.css';
@@ -13,12 +13,18 @@ interface USMapProps {
 const USMap = ({ children }: USMapProps) => {
   const { statesData, loading, error } = useUSStates();
   const isDark = useDarkMode();
+  const mapRef = useRef<MapRef | null>(null);
 
   // Initial view state centered on continental US
   const initialViewState = {
-    longitude: -96,
-    latitude: 38.5,
-    zoom: 3.8,
+    // longitude: -96,
+    // latitude: 38.5,
+    // zoom: 3.8,
+    bounds: [
+      [-125, 24],    // Southwest [lng, lat]
+      [-66.5, 51], // Northeast [lng, lat]
+    ] as [[number, number], [number, number]],
+    fitBoundsOptions: { padding: 16 },
   };
 
   // Bounds for continental US
@@ -67,7 +73,7 @@ const USMap = ({ children }: USMapProps) => {
 
   if (loading) {
     return (
-      <div className="w-full h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+      <div className="w-full h-full bg-white dark:bg-gray-900 flex items-center justify-center">
         <p className="text-gray-600 dark:text-gray-400">Loading map...</p>
       </div>
     );
@@ -75,26 +81,41 @@ const USMap = ({ children }: USMapProps) => {
 
   if (error) {
     return (
-      <div className="w-full h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+      <div className="w-full h-full bg-white dark:bg-gray-900 flex items-center justify-center">
         <p className="text-red-600 dark:text-red-400">Error loading map: {error}</p>
       </div>
     );
   }
 
   return (
-    <div className="w-full h-screen">
+    <div className="w-full h-full">
       <Map
         initialViewState={initialViewState}
-        style={{ width: '100%', height: '100%' }}
+        style={{ width: '100vw', height: '100%' }}
         mapStyle={mapStyle}
-        maxBounds={maxBounds}
-        scrollZoom={false}
-        dragPan={false}
+        // maxBounds={initialViewState.bounds}
+        // renderWorldCopies={false}
+        // minZoom={2}
+        maxZoom={10}
+        scrollZoom={true}
+        dragPan={true}
         dragRotate={false}
-        doubleClickZoom={false}
-        touchZoomRotate={false}
+        touchZoomRotate={true}
+        touchPitch={false}
+        doubleClickZoom={true}
         keyboard={false}
         attributionControl={false}
+        
+        ref={mapRef}
+        onLoad={() => {
+          const map = mapRef.current?.getMap();
+          map?.touchZoomRotate.disableRotation();
+
+          // TODO: make this phone only
+          map?.setMinZoom(map?.getZoom());
+          // console.log(`onLoad.zoom: ${map?.getZoom()}`);
+        }}
+        // trackResize={true}
       >
         {/* Render US states as GeoJSON */}
         {statesData && (
